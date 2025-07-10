@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "nodemon index.js"
   },
   "repository": {
     "type": "git",
@@ -16,5 +16,19 @@
     "url": "https://github.com/NaghamGhawanmeh/tic-tac-toe-game/issues"
   },
   "homepage": "https://github.com/NaghamGhawanmeh/tic-tac-toe-game#readme",
-  "description": ""
+  "description": "",
+  "dependencies": {
+    "@apollo/server": "^4.12.2",
+    "@graphql-tools/schema": "^10.0.23",
+    "bcryptjs": "^3.0.2",
+    "body-parser": "^2.2.0",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "graphql": "^16.11.0",
+    "graphql-subscriptions": "^3.0.0",
+    "graphql-ws": "^6.0.5",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.16.2",
+    "ws": "^8.18.3"
+  }
 }
