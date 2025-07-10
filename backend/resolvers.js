@@ -38,6 +38,7 @@ export const resolvers = {
         return newUser;
       } catch (err) {
         console.log("Error:", err);
+        throw err;
       }
     },
     login: async (_, args) => {
@@ -71,6 +72,7 @@ export const resolvers = {
         };
       } catch (err) {
         console.log("Error:", err);
+        throw err;
       }
     },
   },
