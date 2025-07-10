@@ -21,13 +21,11 @@ const server = new ApolloServer({
 
 await server.start();
 
+// ✅ middlewares
 app.use(
   "/graphql",
-  cors({
-    origin: "http://localhost:3000",
-    credentials: true,
-  }),
-  bodyParser.json(),
+  cors({ origin: "http://localhost:3000", credentials: true }),
+  bodyParser.json(), // ✅ خليها جوا نفس المسار
   expressMiddleware(server)
 );
 

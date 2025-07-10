@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { UserModel } from "./db.js";
-const JWT_SECRET = "supersecret_key"; // تقدر تغيره وتحفظه بالبيئة (env)
+import { GameModel, UserModel } from "./db.js";
+const JWT_SECRET = "supersecret_key";
 
 export const resolvers = {
   Query: {
@@ -10,6 +10,12 @@ export const resolvers = {
     },
     me: async (_, __, { user }) => {
       return user; // رح نضبطها لاحقًا لما نضيف مصادقة
+    },
+    games: async () => {
+      return await GameModel.find();
+    },
+    game: async (_, args) => {
+      return await GameModel.findById(args.id);
     },
   },
 
@@ -74,6 +80,9 @@ export const resolvers = {
         console.log("Error:", err);
         throw err;
       }
+    },
+    createGame: async (_, args) => {
+      const { playerX } = args;
     },
   },
 };

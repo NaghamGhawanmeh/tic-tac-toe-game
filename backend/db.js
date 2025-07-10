@@ -28,4 +28,35 @@ const userSchema = new mongoose.Schema({
   },
 });
 
+const gameSchema = new mongoose.Schema({
+  playerX: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
+  },
+  playerO: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+  },
+  board: {
+    type: [String],
+    default: ["", "", "", "", "", "", "", "", ""],
+  },
+  currentTurn: {
+    type: String,
+    enum: ["X", "O"],
+    default: "X",
+  },
+  status: {
+    type: String,
+    enum: ["WAITING", "IN_PROGRESS", "FINISHED"],
+    default: "WAITING",
+  },
+  winner: {
+    type: String,
+    enum: ["X", "O", "DRAW", null],
+    default: null,
+  },
+});
 export const UserModel = mongoose.model("User", userSchema);
+export const GameModel = mongoose.model("Game", gameSchema);
