@@ -13,6 +13,7 @@ import {
 } from "@mui/material";
 import { Formik, Form, Field } from "formik";
 import * as Yup from "yup";
+import { useNavigate } from "react-router-dom";
 
 const LOGIN_MUTATION = gql`
   mutation Login($email: String!, $password: String!) {
@@ -64,6 +65,7 @@ const AuthPage = () => {
   const [mode, setMode] = useState("login");
   const [login] = useMutation(LOGIN_MUTATION);
   const [signup] = useMutation(SIGNUP_MUTATION);
+  const navigate = useNavigate();
 
   const handleModeChange = (_, newMode) => {
     if (newMode) setMode(newMode);
@@ -103,12 +105,16 @@ const AuthPage = () => {
                         password: values.password,
                       },
                     });
-                    console.log("Login data:", res.data);
+                    const { token, user } = res.data.login;
+                    localStorage.setItem("token", token);
+                    localStorage.setItem("userId", user.id);
                     alert("Logged in successfully!");
+                    navigate("/users");
                   } else {
                     const res = await signup({ variables: values });
                     console.log("Signup data:", res.data);
-                    alert("Registered successfully!");
+                    alert("Registered successfully! You can now log in.");
+                    setMode("login");
                   }
                 } catch (err) {
                   console.error(err);

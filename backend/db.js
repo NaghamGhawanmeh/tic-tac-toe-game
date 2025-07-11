@@ -37,6 +37,7 @@ const gameSchema = new mongoose.Schema({
   playerO: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
+    default: null,
   },
   board: {
     type: [String],
@@ -49,7 +50,14 @@ const gameSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ["WAITING", "IN_PROGRESS", "FINISHED"],
+    enum: [
+      "WAITING",
+      "IN_PROGRESS",
+      "FINISHED",
+      "WAITING_FOR_REQUEST",
+      "COMPLETED",
+      "REJECTED",
+    ],
     default: "WAITING",
   },
   winner: {
@@ -58,5 +66,26 @@ const gameSchema = new mongoose.Schema({
     default: null,
   },
 });
+
+// ✅ تأكد إنك تكتبها هكذا حتى تتحول _id ل String في الردود
+userSchema.set("toJSON", {
+  transform: (doc, ret) => {
+    ret.id = ret._id.toString();
+    delete ret._id;
+    delete ret.__v;
+    delete ret.password; // لو ما بدك تبينه
+    return ret;
+  },
+});
+
+gameSchema.set("toJSON", {
+  transform: (doc, ret) => {
+    ret.id = ret._id.toString();
+    delete ret._id;
+    delete ret.__v;
+    return ret;
+  },
+});
+
 export const UserModel = mongoose.model("User", userSchema);
 export const GameModel = mongoose.model("Game", gameSchema);
