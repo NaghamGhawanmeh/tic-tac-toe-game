@@ -1,5 +1,5 @@
 import React from "react";
-import { useQuery, useMutation, gql } from "@apollo/client";
+import { useQuery, useMutation, useSubscription, gql } from "@apollo/client";
 import {
   Container,
   Typography,
@@ -8,6 +8,7 @@ import {
   Button,
   Box,
 } from "@mui/material";
+import { useNavigate } from "react-router-dom";
 
 const GET_GAMES = gql`
   query GetGames {
@@ -44,14 +45,45 @@ const REJECT_GAME = gql`
   }
 `;
 
+const GAME_UPDATED_SUB = gql`
+  subscription GameUpdated($gameId: ID!) {
+    gameUpdated(gameId: $gameId) {
+      id
+      status
+      playerX {
+        id
+      }
+      playerO {
+        id
+      }
+    }
+  }
+`;
+
 const RequestsPage = () => {
   const { data, loading, error, refetch } = useQuery(GET_GAMES);
-  console.log("hhhhh:", data);
-
   const [acceptGame] = useMutation(ACCEPT_GAME);
   const [rejectGame] = useMutation(REJECT_GAME);
-
+  const navigate = useNavigate();
   const currentUserId = localStorage.getItem("userId");
+  const [acceptedGameId, setAcceptedGameId] = React.useState(null);
+
+  const { data: subData } = useSubscription(GAME_UPDATED_SUB, {
+    variables: { gameId: acceptedGameId },
+    skip: !acceptedGameId,
+  });
+
+  React.useEffect(() => {
+    if (subData && subData.gameUpdated) {
+      const game = subData.gameUpdated;
+      if (
+        game.status === "IN_PROGRESS" &&
+        (game.playerX.id === currentUserId || game.playerO.id === currentUserId)
+      ) {
+        navigate(`/game/${game.id}`);
+      }
+    }
+  }, [subData, currentUserId, navigate]);
 
   if (loading) return <Typography>Loading...</Typography>;
   if (error) return <Typography>Error: {error.message}</Typography>;
@@ -65,8 +97,7 @@ const RequestsPage = () => {
   const handleAccept = async (gameId) => {
     try {
       await acceptGame({ variables: { gameId, playerO: currentUserId } });
-      alert("Request accepted!");
-      refetch();
+      setAcceptedGameId(gameId);
     } catch (err) {
       console.error(err);
       alert("Failed to accept the request");

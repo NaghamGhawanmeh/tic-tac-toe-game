@@ -1,5 +1,5 @@
 import React from "react";
-import { useQuery, gql, useMutation } from "@apollo/client";
+import { useQuery, gql, useMutation, useSubscription } from "@apollo/client";
 import {
   Container,
   Typography,
@@ -24,7 +24,6 @@ const GET_USERS = gql`
   }
 `;
 
-// Mutation لتغيير حالة المستخدم إلى OFFLINE عند تسجيل الخروج
 const LOGOUT_MUTATION = gql`
   mutation Logout($id: ID!) {
     updateUserStatus(id: $id, status: OFFLINE) {
@@ -33,6 +32,7 @@ const LOGOUT_MUTATION = gql`
     }
   }
 `;
+
 const CREATE_GAME_MUTATION = gql`
   mutation CreateGame($playerX: ID!, $playerO: ID!) {
     createGame(playerX: $playerX, playerO: $playerO) {
@@ -43,23 +43,53 @@ const CREATE_GAME_MUTATION = gql`
   }
 `;
 
+const GAME_UPDATED_SUB = gql`
+  subscription GameUpdated($gameId: ID!) {
+    gameUpdated(gameId: $gameId) {
+      id
+      status
+      playerX {
+        id
+      }
+      playerO {
+        id
+      }
+    }
+  }
+`;
+
 const UsersPage = () => {
   const navigate = useNavigate();
   const { data, loading, error } = useQuery(GET_USERS);
   const [createGame] = useMutation(CREATE_GAME_MUTATION);
-
-  // انت بتختاري ID المستخدم الحالي من التوكن أو من localStorage
   const currentUserId = localStorage.getItem("userId");
+  const [createdGameId, setCreatedGameId] = React.useState(null);
 
   const [logoutMutation] = useMutation(LOGOUT_MUTATION, {
     variables: { id: currentUserId },
     onCompleted: () => {
-      // امسح بيانات المستخدم من التخزين
       localStorage.removeItem("userId");
       localStorage.removeItem("token");
       navigate("/");
     },
   });
+
+  const { data: subData } = useSubscription(GAME_UPDATED_SUB, {
+    variables: { gameId: createdGameId },
+    skip: !createdGameId,
+  });
+
+  React.useEffect(() => {
+    if (subData && subData.gameUpdated) {
+      const game = subData.gameUpdated;
+      if (
+        game.status === "IN_PROGRESS" &&
+        (game.playerX.id === currentUserId || game.playerO.id === currentUserId)
+      ) {
+        navigate(`/game/${game.id}`);
+      }
+    }
+  }, [subData, currentUserId, navigate]);
 
   if (loading) return <Typography>Loading...</Typography>;
   if (error) return <Typography>Error: {error.message}</Typography>;
@@ -67,12 +97,10 @@ const UsersPage = () => {
   const handleInvite = async (userId) => {
     try {
       const res = await createGame({
-        variables: {
-          playerX: currentUserId,
-          playerO: userId,
-        },
+        variables: { playerX: currentUserId, playerO: userId },
       });
-      console.log("Game created:", res.data.createGame);
+      const gameId = res.data.createGame.id;
+      setCreatedGameId(gameId);
       alert(`Invitation sent to user with ID: ${userId}`);
     } catch (err) {
       console.error(err);
@@ -89,17 +117,10 @@ const UsersPage = () => {
       alert("Logout failed!");
     }
   };
-  console.log(data);
 
   return (
     <Container maxWidth="md">
-      <Box
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-        mt={4}
-        mb={2}
-      >
+      <Box display="flex" justifyContent="space-between" mt={4} mb={2}>
         <Typography variant="h4">Users List</Typography>
         <Button variant="contained" color="error" onClick={handleLogout}>
           Logout
@@ -109,15 +130,13 @@ const UsersPage = () => {
       <Grid container spacing={3}>
         {data.users.map((user) => (
           <Grid item xs={12} sm={6} md={4} key={user.id}>
-            <Card sx={{ minHeight: 200 }}>
+            <Card>
               <CardContent>
                 <Typography variant="h6">{user.displayName}</Typography>
                 <Typography variant="body2" color="text.secondary">
                   {user.email}
                 </Typography>
-                <Typography variant="body2" mt={1}>
-                  Score: {user.score}
-                </Typography>
+                <Typography variant="body2">Score: {user.score}</Typography>
                 <Chip
                   label={user.status}
                   color={
